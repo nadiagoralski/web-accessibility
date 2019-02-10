@@ -1,6 +1,6 @@
 /*! extension.ts
 * Flamingos are pretty badass!
-* Copyright (c) 2018 Max van der Schee; Licensed MIT */
+* Copyright (c) 2019 Max van der Schee; Licensed MIT */
 
 import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';

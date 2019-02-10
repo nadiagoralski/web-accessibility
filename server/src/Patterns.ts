@@ -230,15 +230,15 @@ export async function validateTab(m: RegExpExecArray) {
 	}
 }
 
-// export async function validateId(m: RegExpExecArray) {
-// 	let connection = createConnection(ProposedFeatures.all);
-// 	let idValue = /id="(.*?[a-z].*?)"/i.exec(m[0])[1]; 
-// 	let pattern: RegExp = new RegExp(idValue, 'i');
-// 	// connection.console.log(idValue);
-// 	if (pattern.exec(m.input).length == 2) {
-// 		return {
-// 			meta: m,
-// 			mess: 'Duplicated id'
-// 		};
-// 	}
-// }
+export async function validateId(m: RegExpExecArray) {
+	// let connection = createConnection(ProposedFeatures.all);
+	let idValue = /id="(.*?[a-z].*?)"/i.exec(m[0])[1]; 
+	let pattern: RegExp = new RegExp(idValue, 'i');
+	// connection.console.log(idValue);
+	if (pattern.exec(m.input).length == 2) {
+		return {
+			meta: m,
+			mess: 'Duplicated id'
+		};
+	}
+}

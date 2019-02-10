@@ -1,6 +1,6 @@
 /*! server.ts
 * Flamingos are pretty badass!
-* Copyright (c) 2018 Max van der Schee; Licensed MIT */
+* Copyright (c) 2019 Max van der Schee; Licensed MIT */
 
 import {
 	createConnection,
@@ -12,12 +12,14 @@ import {
 	InitializeParams,
 	DidChangeConfigurationNotification,
 } from 'vscode-languageserver';
-import * as Pattern from './patterns';
+// import * as Pattern from './patterns';
+import * as Rules from './web-accessibility.json';
 
 let connection = createConnection(ProposedFeatures.all);
 let documents: TextDocuments = new TextDocuments();
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
+// let pattern = patternBuilder();
 
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
@@ -91,6 +93,18 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
+// function patternBuilder() {
+// 	let patterns = [];
+
+// 	Rules.rules.forEach(item => {
+// 		patterns.push(item.pattern);
+// 	});
+
+// 	let pattern: RegExp = new RegExp(patterns.join('|'), 'ig');
+
+// 	return pattern;
+// }
+
 // Only this part is interesting.
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let settings = await getDocumentSettings(textDocument.uri);
@@ -99,96 +113,103 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let m: RegExpExecArray | null;
 	let diagnostics: Diagnostic[] = [];
 
-	while ((m = Pattern.pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		if (m != null) {
-			let el = m[0].slice(0, 5);
-			switch (true) {
-				// ID
-				// case (/id="/i.test(el)):
-				// 	let resultId = await Pattern.validateId(m);
-				// 	if (resultId) {
-				// 		problems++;
-				// 		_diagnostics(resultId.meta, resultId.mess);
-				// 	}
-				// 	break;
-				// Div
-				case (/<div/i.test(el)):
-					let resultDiv = await Pattern.validateDiv(m);
-					if (resultDiv) {
-						problems++;
-						_diagnostics(resultDiv.meta, resultDiv.mess);
-					}
-					break;
-				// Span
-				case (/<span/i.test(el)):
-					let resultSpan = await Pattern.validateSpan(m);
-					if (resultSpan) {
-						problems++;
-						_diagnostics(resultSpan.meta, resultSpan.mess);
-					}
-					break;
-				// Links
-				case (/<a\s/i.test(el)):
-					let resultA = await Pattern.validateA(m);
-					if (resultA) {
-						problems++;
-						_diagnostics(resultA.meta, resultA.mess);
-					}
-					break;
-				// Images
-				case (/<img/i.test(el)):
-					let resultImg = await Pattern.validateImg(m);
-					if (resultImg) {
-						problems++;
-						_diagnostics(resultImg.meta, resultImg.mess);
-					}
-					break;
-				// input
-				case (/<inpu/i.test(el)):
-					let resultInput = await Pattern.validateInput(m);
-					if (resultInput) {
-						problems++;
-						_diagnostics(resultInput.meta, resultInput.mess);
-					}
-					break;
-				// Head, title and meta
-				case (/<head/i.test(el)):
-					if (/<meta(?:.+?)viewport(?:.+?)>/i.test(m[0])) {
-						let resultMeta = await Pattern.validateMeta(m);
-						if (resultMeta) {
-							problems++;
-							_diagnostics(resultMeta.meta, resultMeta.mess);
-						}
-					}
-					if (!/<title>/i.test(m[0]) || /<title>/i.test(m[0])) {
-						let resultTitle = await Pattern.validateTitle(m);
-						if (resultTitle) {
-							problems++;
-							_diagnostics(resultTitle.meta, resultTitle.mess);
-						}
-					}
-					break;
-				// HTML
-				case (/<html/i.test(el)):
-					let resultHtml = await Pattern.validateHtml(m);
-					if (resultHtml) {
-						problems++;
-						_diagnostics(resultHtml.meta, resultHtml.mess);
-					}
-					break;
-				// Tabindex
-				case (/tabin/i.test(el)):
-					let resultTab = await Pattern.validateTab(m);
-					if (resultTab) {
-						problems++;
-						_diagnostics(resultTab.meta, resultTab.mess);
-					}
-					break;
-				default:
-					break;
-			}
+	Rules.rules.forEach(item => {
+		let pattern: RegExp = new RegExp(item.pattern, 'ig');
+		while ((m = pattern.exec(text)) !== null) {
+			problems++;
+			_diagnostics(m, item.description);
 		}
-	}
+	});
+
+	// while ((m = Pattern.pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
+	// 	if (m != null) {
+	// 		let el = m[0].slice(0, 5);
+	// 		switch (true) {
+	//			// ID
+	//			case (/id="/i.test(el)):
+	//				let resultId = await Pattern.validateId(m);
+	//				if (resultId) {
+	//					problems++;
+	//					_diagnostics(resultId.meta, resultId.mess);
+	//				}
+	//				break;
+	//			// Div
+	// 			case (/<div/i.test(el)):
+	// 				let resultDiv = await Pattern.validateDiv(m);
+	// 				if (resultDiv) {
+	// 					problems++;
+	// 					_diagnostics(resultDiv.meta, resultDiv.mess);
+	// 				}
+	// 				break;
+	// 			// Span
+	// 			case (/<span/i.test(el)):
+	// 				let resultSpan = await Pattern.validateSpan(m);
+	// 				if (resultSpan) {
+	// 					problems++;
+	// 					_diagnostics(resultSpan.meta, resultSpan.mess);
+	// 				}
+	// 				break;
+	// 			// Links
+	// 			case (/<a\s/i.test(el)):
+	// 				let resultA = await Pattern.validateA(m);
+	// 				if (resultA) {
+	// 					problems++;
+	// 					_diagnostics(resultA.meta, resultA.mess);
+	// 				}
+	// 				break;
+	// 			// Images
+	// 			case (/<img/i.test(el)):
+	// 				let resultImg = await Pattern.validateImg(m);
+	// 				if (resultImg) {
+	// 					problems++;
+	// 					_diagnostics(resultImg.meta, resultImg.mess);
+	// 				}
+	// 				break;
+	// 			// input
+	// 			case (/<inpu/i.test(el)):
+	// 				let resultInput = await Pattern.validateInput(m);
+	// 				if (resultInput) {
+	// 					problems++;
+	// 					_diagnostics(resultInput.meta, resultInput.mess);
+	// 				}
+	// 				break;
+	// 			// Head, title and meta
+	// 			case (/<head/i.test(el)):
+	// 				if (/<meta(?:.+?)viewport(?:.+?)>/i.test(m[0])) {
+	// 					let resultMeta = await Pattern.validateMeta(m);
+	// 					if (resultMeta) {
+	// 						problems++;
+	// 						_diagnostics(resultMeta.meta, resultMeta.mess);
+	// 					}
+	// 				}
+	// 				if (!/<title>/i.test(m[0]) || /<title>/i.test(m[0])) {
+	// 					let resultTitle = await Pattern.validateTitle(m);
+	// 					if (resultTitle) {
+	// 						problems++;
+	// 						_diagnostics(resultTitle.meta, resultTitle.mess);
+	// 					}
+	// 				}
+	// 				break;
+	// 			// HTML
+	// 			case (/<html/i.test(el)):
+	// 				let resultHtml = await Pattern.validateHtml(m);
+	// 				if (resultHtml) {
+	// 					problems++;
+	// 					_diagnostics(resultHtml.meta, resultHtml.mess);
+	// 				}
+	// 				break;
+	// 			// Tabindex
+	// 			case (/tabin/i.test(el)):
+	// 				let resultTab = await Pattern.validateTab(m);
+	// 				if (resultTab) {
+	// 					problems++;
+	// 					_diagnostics(resultTab.meta, resultTab.mess);
+	// 				}
+	// 				break;
+	// 			default:
+	// 				break;
+	// 		}
+	// 	}
 
 	async function _diagnostics(regEx: RegExpExecArray, diagnosticsMessage: string) {
 		let diagnosic: Diagnostic = {

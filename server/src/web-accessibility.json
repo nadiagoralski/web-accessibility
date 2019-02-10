@@ -1,0 +1,55 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "JSON schema for the Web Accessibility rules.",
+	"type": "object",
+	"rules": [
+		{
+			"type": "div",
+			"description": "Use Semantic HTML5 or specify a WAI-ARIA role [role=\"\"]",
+			"severity": 2,
+			"pattern": "<div(?:.)+?>",
+			"filter": [
+				{
+					"options": "i",
+					"description": "Use Semantic HTML5 or specify a WAI-ARIA role [role=\"\"]",
+					"negative-lookup": true,
+					"patterns": "role=(?:.*?[a-z].*?)"
+				}
+			]
+		},
+		{
+			"type": "span",
+			"description": "Specify a WAI-ARIA role [role=\"\"]",
+			"severity": 2,
+			"pattern": "<span(?:.)+?>",
+			"filter": [
+				{
+					"options": "i",
+					"description": "Specify a WAI-ARIA role [role=\"\"]",
+					"negative-lookup": true,
+					"patterns": "role=(?:.*?[a-z].*?)\""
+				},
+				{
+					"options": "i",
+					"description": "Change the span to a <button>",
+					"negative-lookup": false,
+					"patterns": "<span(?:.+?)(?:button|btn)(?:.+?)>"
+				}
+			]
+		},
+		{
+			"type": "id",
+			"description": "Suggests to remove duplicated id",
+			"severity": 2,
+			"pattern": "id=\"(?:.)+?\"",
+			"filter": [
+				{
+					"options": "ig",
+					"description": "Suggests to remove duplicated id",
+					"negative-lookup": false,
+					"patterns": "id=\"(.*?[a-z].*?)\""
+				}
+			]
+		}
+	]
+}
