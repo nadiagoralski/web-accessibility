@@ -108,16 +108,40 @@ documents.onDidChangeContent(change => {
 // Only this part is interesting.
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let settings = await getDocumentSettings(textDocument.uri);
+	let diagnostics: Diagnostic[] = [];
 	let text = textDocument.getText();
 	let problems = 0;
 	let m: RegExpExecArray | null;
-	let diagnostics: Diagnostic[] = [];
 
 	Rules.rules.forEach(item => {
 		let pattern: RegExp = new RegExp(item.pattern, 'ig');
+		// let problemArray: Array;
+
+
 		while ((m = pattern.exec(text)) !== null) {
-			problems++;
-			_diagnostics(m, item.description);
+			item.filters.forEach(filter => {
+				let filterPattern: RegExp = new RegExp(filter.pattern, filter.options);
+				let newRegExp: RegExpExecArray;
+
+				if(filter['replace-regex'] === true) {
+					newRegExp = filterPattern.exec(m[0]);
+					newRegExp.index = m.index;
+				} else {
+					newRegExp = m;
+				}
+
+				// if (filter.followUp)
+
+				if(filter['negative-lookup'] === true){
+					if(filterPattern.test(newRegExp[0])) {
+						problems++;
+						_diagnostics(newRegExp, filter.description, item.severity);
+					} 
+				} else if (filterPattern.test(newRegExp[0])) {
+					problems++;
+					_diagnostics(newRegExp, filter.description, item.severity);
+				}
+			});
 		}
 	});
 
@@ -211,7 +235,9 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// 		}
 	// 	}
 
-	async function _diagnostics(regEx: RegExpExecArray, diagnosticsMessage: string) {
+	async function _diagnostics(regEx: RegExpExecArray, diagnosticsMessage: string, severityNumber: number) {
+		// add some stupid logic for giving hints warnings and shit
+		
 		let diagnosic: Diagnostic = {
 			severity: DiagnosticSeverity.Warning,
 			range: {
@@ -219,9 +245,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				end: textDocument.positionAt(regEx.index + regEx[0].length)
 			},
 			message: diagnosticsMessage,
-			source: 'web accessibility',
+			source: 'web accessibility'
 		};
-
 		diagnostics.push(diagnosic);
 	}
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });

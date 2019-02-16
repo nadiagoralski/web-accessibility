@@ -8,12 +8,13 @@
 			"description": "Use Semantic HTML5 or specify a WAI-ARIA role [role=\"\"]",
 			"severity": 2,
 			"pattern": "<div(?:.)+?>",
-			"filter": [
+			"filters": [
 				{
 					"options": "i",
 					"description": "Use Semantic HTML5 or specify a WAI-ARIA role [role=\"\"]",
 					"negative-lookup": true,
-					"patterns": "role=(?:.*?[a-z].*?)"
+					"replace-regex": false,
+					"pattern": "role=(?:.*?[a-z].*?)\""
 				}
 			]
 		},
@@ -22,18 +23,20 @@
 			"description": "Specify a WAI-ARIA role [role=\"\"]",
 			"severity": 2,
 			"pattern": "<span(?:.)+?>",
-			"filter": [
+			"filters": [
 				{
 					"options": "i",
 					"description": "Specify a WAI-ARIA role [role=\"\"]",
 					"negative-lookup": true,
-					"patterns": "role=(?:.*?[a-z].*?)\""
+					"replace-regex": false,
+					"pattern": "role=(?:.*?[a-z].*?)\""
 				},
 				{
 					"options": "i",
 					"description": "Change the span to a <button>",
 					"negative-lookup": false,
-					"patterns": "<span(?:.+?)(?:button|btn)(?:.+?)>"
+					"replace-regex": false,
+					"pattern": "<span(?:.+?)(?:button|btn)(?:.+?)>"
 				}
 			]
 		},
@@ -42,12 +45,120 @@
 			"description": "Suggests to remove duplicated id",
 			"severity": 2,
 			"pattern": "id=\"(?:.)+?\"",
-			"filter": [
+			"filters": [
 				{
 					"options": "ig",
 					"description": "Suggests to remove duplicated id",
 					"negative-lookup": false,
-					"patterns": "id=\"(.*?[a-z].*?)\""
+					"replace-regex": false,
+					"pattern": "id=\"(.*?[a-z].*?)\""
+				}
+			]
+		},
+		{
+			"type": "a",
+			"description": "Provide a descriptive text in between the tags",
+			"severity": 2,
+			"pattern": "<a(?:.)+?>(?:(?:\\s|\\S)+?(?=<\/a>))<\/a>",
+			"filters": [
+				{
+					"options": "ig",
+					"description": "",
+					"negative-lookup": false,
+					"replace-regex": true,
+					"followUp": null,
+					"pattern": "<(?:\\s|\\S)+?>"
+				},
+				{
+					"options": "ig",
+					"description": "",
+					"negative-lookup": true,
+					"replace-regex": false,
+					"followUp": 0,
+					"pattern": "(?:\\S+?)"
+				},
+				{
+					"options": "i",
+					"description": "Provide a descriptive text in between the tags",
+					"negative-lookup": false,
+					"replace-regex": true,
+					"followUp": 1,
+					"pattern": "<a(?:.)+?>"
+				}
+			]
+		},
+		{
+			"type": "img",
+			"description": "",
+			"severity": 2,
+			"pattern": "<img(?:.)+?>",
+			"filters": [
+				{
+					"options": "i",
+					"description": "",
+					"negative-lookup": false,
+					"replace-regex": false,
+					"pattern": ""
+				}
+			]
+		},
+		{
+			"type": "input",
+			"description": "",
+			"severity": 2,
+			"pattern": "<input(?:.)+?>",
+			"filters": [
+				{
+					"options": "i",
+					"description": "",
+					"negative-lookup": false,
+					"replace-regex": false,
+					"pattern": ""
+				}
+			]
+		},
+		{
+			"type": "head",
+			"description": "",
+			"severity": 2,
+			"pattern": "<head(?:.|)+?>(?:(?:\\s|\\S|)+?(?=<\/head>))<\/head>",
+			"filters": [
+				{
+					"options": "i",
+					"description": "",
+					"negative-lookup": false,
+					"replace-regex": false,
+					"pattern": ""
+				}
+			]
+		},
+		{
+			"type": "html",
+			"description": "",
+			"severity": 2,
+			"pattern": "<html(?:.)+?>",
+			"filters": [
+				{
+					"options": "i",
+					"description": "",
+					"negative-lookup": false,
+					"replace-regex": false,
+					"pattern": ""
+				}
+			]
+		},
+		{
+			"type": "tabindex",
+			"description": "",
+			"severity": 2,
+			"pattern": "tabindex=\"(?:.)+?\"",
+			"filters": [
+				{
+					"options": "i",
+					"description": "",
+					"negative-lookup": false,
+					"replace-regex": false,
+					"pattern": ""
 				}
 			]
 		}
