@@ -2,26 +2,17 @@
 * Flamingos are pretty badass!
 * Copyright (c) 2019 Max van der Schee; Licensed MIT */
 
-import {
-	createConnection,
-	TextDocuments,
-	TextDocument,
-	Diagnostic,
-	DiagnosticSeverity,
-	ProposedFeatures,
-	InitializeParams,
-	DidChangeConfigurationNotification,
-} from 'vscode-languageserver';
+import * as vs from 'vscode-languageserver';
 // import * as Pattern from './patterns';
 import * as Rules from './web-accessibility.json';
 
-let connection = createConnection(ProposedFeatures.all);
-let documents: TextDocuments = new TextDocuments();
+let connection = vs.createConnection(vs.ProposedFeatures.all);
+let documents: vs.TextDocuments = new vs.TextDocuments();
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 // let pattern = patternBuilder();
 
-connection.onInitialize((params: InitializeParams) => {
+connection.onInitialize((params: vs.InitializeParams) => {
 	let capabilities = params.capabilities;
 
 	hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
@@ -37,7 +28,7 @@ connection.onInitialize((params: InitializeParams) => {
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
 		connection.client.register(
-			DidChangeConfigurationNotification.type,
+			vs.DidChangeConfigurationNotification.type,
 			undefined
 		);
 	}
@@ -50,9 +41,10 @@ connection.onInitialized(() => {
 
 interface ServerSettings {
 	maxNumberOfProblems: number;
+	semanticExclude: boolean;
 }
 
-const defaultSettings: ServerSettings = { maxNumberOfProblems: 1000 };
+const defaultSettings: ServerSettings = { maxNumberOfProblems: 100, semanticExclude: false };
 let globalSettings: ServerSettings = defaultSettings;
 let documentSettings: Map<string, Thenable<ServerSettings>> = new Map();
 
@@ -61,7 +53,7 @@ connection.onDidChangeConfiguration(change => {
 		documentSettings.clear();
 	} else {
 		globalSettings = <ServerSettings>(
-			(change.settings.languageServerAccessibility || defaultSettings)
+			(change.settings.webAccessibility || defaultSettings)
 		);
 	}
 
@@ -76,7 +68,7 @@ function getDocumentSettings(resource: string): Thenable<ServerSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'languageServerAccessibility'
+			section: 'webAccessibility'
 		});
 		documentSettings.set(resource, result);
 	}
@@ -106,9 +98,9 @@ documents.onDidChangeContent(change => {
 // }
 
 // Only this part is interesting.
-async function validateTextDocument(textDocument: TextDocument): Promise<void> {
+async function validateTextDocument(textDocument: vs.TextDocument): Promise<void> {
 	let settings = await getDocumentSettings(textDocument.uri);
-	let diagnostics: Diagnostic[] = [];
+	let diagnostics: vs.Diagnostic[] = [];
 	let text = textDocument.getText();
 	let problems = 0;
 	let m: RegExpExecArray | null;
@@ -148,16 +140,18 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	async function _diagnostics(regEx: RegExpExecArray, diagnosticsMessage: string, severityNumber: number) {
 		// add some stupid logic for giving hints warnings and shit
 		
-		let diagnosic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
+		let diagnostic: vs.Diagnostic = {
+			severity: vs.DiagnosticSeverity.Warning,
+			message: diagnosticsMessage,
 			range: {
 				start: textDocument.positionAt(regEx.index),
-				end: textDocument.positionAt(regEx.index + regEx[0].length)
+				end: textDocument.positionAt(regEx.index + regEx[0].length),
 			},
-			message: diagnosticsMessage,
+			code: 0,
 			source: 'web accessibility'
 		};
-		diagnostics.push(diagnosic);
+
+		diagnostics.push(diagnostic);
 	}
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }

@@ -13,13 +13,14 @@
 const patterns: string[] = [
 	"<div(?:.)+?>",
 	"<span(?:.)+?>",
-	"id=\"(?:.)+?\"",
+	// "id=\"(?:.)+?\"",
 	"<a(?:.)+?>(?:(?:\\s|\\S)+?(?=<\/a>))<\/a>",
 	"<img(?:.)+?>",
 	"<input(?:.)+?>",
 	"<head(?:.|)+?>(?:(?:\\s|\\S|)+?(?=<\/head>))<\/head>",
 	"<html(?:.)+?>",
 	"tabindex=\"(?:.)+?\"",
+	"<(?:i|)frame(?:.|)+?>"
 ];
 export const pattern: RegExp = new RegExp(patterns.join('|'), 'ig');
 
@@ -230,15 +231,24 @@ export async function validateTab(m: RegExpExecArray) {
 	}
 }
 
-export async function validateId(m: RegExpExecArray) {
-	// let connection = createConnection(ProposedFeatures.all);
-	let idValue = /id="(.*?[a-z].*?)"/i.exec(m[0])[1]; 
-	let pattern: RegExp = new RegExp(idValue, 'i');
-	// connection.console.log(idValue);
-	if (pattern.exec(m.input).length == 2) {
+export async function validateFrame(m: RegExpExecArray) {
+	if (!/title=(?:.*?[a-z].*?)"/i.test(m[0])) {
 		return {
 			meta: m,
-			mess: 'Duplicated id'
+			mess: 'Provide a title that describes the frames content [title=""]'
 		};
 	}
 }
+
+// export async function validateId(m: RegExpExecArray) {
+// 	let connection = createConnection(ProposedFeatures.all);
+// 	let idValue = /id="(.*?[a-z].*?)"/i.exec(m[0])[1]; 
+// 	let pattern: RegExp = new RegExp(idValue, 'i');
+// 	// connection.console.log(idValue);
+// 	if (pattern.exec(m.input).length == 2) {
+// 		return {
+// 			meta: m,
+// 			mess: 'Duplicated id'
+// 		};
+// 	}
+// }
