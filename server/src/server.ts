@@ -2,15 +2,14 @@
 * Flamingos are pretty badass!
 * Copyright (c) 2019 Max van der Schee; Licensed MIT */
 
+import { Rule } from './types';
 import * as vs from 'vscode-languageserver';
-// import * as Pattern from './patterns';
-import * as Rules from './web-accessibility.json';
+import * as wa from './web-accessibility.json';
 
 let connection = vs.createConnection(vs.ProposedFeatures.all);
 let documents: vs.TextDocuments = new vs.TextDocuments();
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
-// let pattern = patternBuilder();
 
 connection.onInitialize((params: vs.InitializeParams) => {
 	let capabilities = params.capabilities;
@@ -85,18 +84,6 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
-// function patternBuilder() {
-// 	let patterns = [];
-
-// 	Rules.rules.forEach(item => {
-// 		patterns.push(item.pattern);
-// 	});
-
-// 	let pattern: RegExp = new RegExp(patterns.join('|'), 'ig');
-
-// 	return pattern;
-// }
-
 // Only this part is interesting.
 async function validateTextDocument(textDocument: vs.TextDocument): Promise<void> {
 	let settings = await getDocumentSettings(textDocument.uri);
@@ -104,8 +91,10 @@ async function validateTextDocument(textDocument: vs.TextDocument): Promise<void
 	let text = textDocument.getText();
 	let problems = 0;
 	let m: RegExpExecArray | null;
+	let rules: Rule[] = wa.rules;
+	
 
-	Rules.rules.forEach(item => {
+	rules.forEach(item => {
 		let pattern: RegExp = new RegExp(item.pattern, 'ig');
 		// let problemArray: Array;
 
