@@ -1,33 +1,33 @@
 /**
- * A Rule defines how a Web Accessibilty rule is
- * written in a `JSON` and interpeteted with in the language server.
+ * A Rule defines how a Web Accessibility rule is
+ * written in a `JSON` and interpreted within the language server.
  */
 export interface Rule {
 	/**
-	 * The type describes what kind of rule it's 
-	 * going to implement for example `Semantic`,
-	 *  `Missing`, `Duplicant` etc. This describtion
-	 * whill be used as a `Diagnostic.code`.
+     * The type describes what kind of rule it's 
+     * going to implement for example `Semantic`,
+     *  `Missing`, `Duplicate` etc. This description
+     * will be used as a `Diagnostic.code`.
 	 */
 	type: string;
 	/**
-	 * The identifier is an Regular expression
-     * that filters out the usefull bit's of text
+     * The identifier is a Regular expression
+     * that filters out the useful bit's of text
      * that will be examined for any possible
      * Web Accessibility violations.
-	 * 
-	 * The first capture groep will be used.
+     * 
+     * The first capture group will be used.
 	 */
 	identifier: RegExp;
 	/**
-	 * The severity defines which type of error
-	 * will be shown when an "oepsie" is found.
-	 * See {@link Severity}
+     * The severity defines which type of error
+     * will be shown when an "oopsie" is found.
+     * See {@link Severity}
 	 */
 	severity: Severity;
 	/**
-	 * The messages contains the actuale warning
-	 * that explains what exactly went wrong. 
+     * The messages contain the actual warning
+     * that explains what exactly went wrong. 
 	 */
 	message: string;
 	/**
@@ -38,21 +38,21 @@ export interface Rule {
 	filters?: Filter[];
 }
 /**
- * Filter holds an other indentifier
+ * Filter holds the other identifier
  * that filters using the first capture group
- * provide by the entry `intentifier`. There are
- * multiple options that tells exactly what needs
+ * provided by the entry `identifier`. There are
+ * multiple options that tell exactly what needs
  * to be done with the `RegExp`.
  * See {@link Option}
  */
 export interface Filter {
 	/**
-	 * The identifier within the `Filter` is 
-	 * the follow up `RegExp` that needs to be
-	 * used to find the core problem with some
-	 * Web Accessibilty rules.
-	 * 
-	 * The first capture groep will be used.
+     * The identifier within the `Filter` is 
+     * the follow up `RegExp` that needs to be
+     * used to find the core problem with some
+     * Web Accessibility rules.
+     * 
+     * The first capture group will be used.
 	 */
 	identifier: RegExp;
 	/**
@@ -62,23 +62,68 @@ export interface Filter {
 	 */
 	options?: Option;
 }
+/**
+ * Options defines which types of modifiers
+ * are possible to use with `RegExp`.
+ */
 export interface Option {
+	/**
+     * The negative modifier reverse the filter
+     * if a value isn't there give an error.
+     * there is no follow up filter as it has 
+	 * no capturing group.
+	 */
 	negative?: boolean;
+	/**
+	 * This is the default behaviour for
+	 * `/stringToFind/i.test(RegExpFilter)`
+	 * and returns true of false.
+	 */
 	contains?: boolean;
+	/**
+     * Replace changes the filtered string
+     * but keeps the index the same.
+     * TODO: more replace options.
+	 */
 	replace?: boolean;
 }
 
+/**
+ * Severity let the user know what kind of
+ * error there should be shown. For example
+ * duplicate id's is definitely a no go, so an 
+ * Error should be displayed. for something less
+ * sever there should be another kind of error
+ * type.
+ */
 export declare namespace Severity {
+	/**
+	 * Reports an error.
+	 */
 	const Error: 1;
+	/**
+	 * Reports a warning.
+	 */
 	const Warning: 2;
+	/**
+	 * Reports an information.
+	 */
 	const Information: 3;
+	/**
+	 * Reports a hint.
+	 */
 	const Hint: 4;
 }
-
 export declare type Severity = 1 | 2 | 3 | 4;
-
+/**
+ * Types are short explanations for what type of 
+ * error there is in the code. It's used as an error code
+ * and used to exclude as a filter parameter for a file,
+ * for example, you don't want any error's for semantic HTML
+ * you can omit `semantic` and it will be excluded by the filter.
+ */
 export declare namespace Type {
-	const SEMANTIC: 'Semantic';
-	const MISSING:	'Missing';
-	const DUPLICANT: 'Duplicant';
+	const Semantic: 'Semantic';
+	const Missing:	'Missing';
+	const Duplicate: 'Duplicate';
 }
