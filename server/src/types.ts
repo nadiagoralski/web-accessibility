@@ -18,13 +18,12 @@ export interface Rule {
      * 
      * The first capture group will be used.
 	 */
-	identifier: RegExp;
+	identifier: string[];
 	/**
      * The severity defines which type of error
      * will be shown when an "oopsie" is found.
-     * See {@link Severity}
 	 */
-	severity: Severity;
+	severity: number;
 	/**
      * The messages contain the actual warning
      * that explains what exactly went wrong. 
@@ -54,7 +53,7 @@ export interface Filter {
      * 
      * The first capture group will be used.
 	 */
-	identifier: RegExp;
+	identifier: string;
 	/**
 	 * The options contains possible modifiers
 	 * on how to execute the `RegExp`.
@@ -87,34 +86,6 @@ export interface Option {
 	 */
 	replace?: boolean;
 }
-
-/**
- * Severity let the user know what kind of
- * error there should be shown. For example
- * duplicate id's is definitely a no go, so an 
- * Error should be displayed. for something less
- * sever there should be another kind of error
- * type.
- */
-export declare namespace Severity {
-	/**
-	 * Reports an error.
-	 */
-	const Error: 1;
-	/**
-	 * Reports a warning.
-	 */
-	const Warning: 2;
-	/**
-	 * Reports an information.
-	 */
-	const Information: 3;
-	/**
-	 * Reports a hint.
-	 */
-	const Hint: 4;
-}
-export declare type Severity = 1 | 2 | 3 | 4;
 /**
  * Types are short explanations for what type of 
  * error there is in the code. It's used as an error code
