@@ -86,57 +86,73 @@ documents.onDidChangeContent(change => {
 
 // Only this part is interesting.
 async function validateTextDocument(textDocument: vs.TextDocument): Promise<void> {
-	let settings = await getDocumentSettings(textDocument.uri);
-	let diagnostics: vs.Diagnostic[] = [];
-	let text = textDocument.getText();
-	let problems = 0;
+	const settings = await getDocumentSettings(textDocument.uri);
+	const diagnostics: vs.Diagnostic[] = [];
+	const text = textDocument.getText();
+	const rules: Rule[] = wa.rules;
 	let m: RegExpExecArray | null;
-	let rules: Rule[] = wa.rules;
+	let problems = 0;
 	
 
-	rules.forEach(item => {
-		let pattern: RegExp = new RegExp(item.pattern, 'ig');
-		// let problemArray: Array;
+	rules.forEach(rule => {
+		const pattern: RegExp = new RegExp(rule.identifier.join('|'), 'ig');
+		let severity: vs.DiagnosticSeverity;
 
+		switch (rule.severity) {
+			case 1:
+				severity = vs.DiagnosticSeverity.Error;
+				break;
+			case 2:
+				severity = vs.DiagnosticSeverity.Warning;
+				break;
+			case 3:
+				severity = vs.DiagnosticSeverity.Information;
+				break;
+			case 4:
+				severity = vs.DiagnosticSeverity.Hint;
+				break;
+		}
 
-		while ((m = pattern.exec(text)) !== null) {
-			item.filters.forEach(filter => {
-				let filterPattern: RegExp = new RegExp(filter.pattern, filter.options);
-				let newRegExp: RegExpExecArray;
-
-				if(filter['replace-regex'] === true) {
-					newRegExp = filterPattern.exec(m[0]);
-					newRegExp.index = m.index;
-				} else {
-					newRegExp = m;
+		while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
+			const lastFilter = rule.filters.length - 1;
+			let test: RegExpExecArray; 
+			rule.filters.forEach((filter, index) => {
+				const filterPattern: RegExp = new RegExp(filter.identifier, 'i');
+				if (filter.options.contains) {
+					if (filterPattern.test(m[0])) {
+						test = m;
+					}
+				}
+				if (filter.options.negative) {
+					if (!filterPattern.test(m[0])) {
+						test = m;
+					}
+				}
+				if (filter.options.replace) {
+					connection.console.log('true rep');
 				}
 
-				// if (filter.followUp)
-
-				if(filter['negative-lookup'] === true){
-					if(filterPattern.test(newRegExp[0])) {
-						problems++;
-						_diagnostics(newRegExp, filter.description, item.severity);
-					} 
-				} else if (filterPattern.test(newRegExp[0])) {
-					problems++;
-					_diagnostics(newRegExp, filter.description, item.severity);
+				if (index == lastFilter) {
+					_diagnostics(test, rule.message, severity, rule.type);
 				}
 			});
 		}
 	});
 
-	async function _diagnostics(regEx: RegExpExecArray, diagnosticsMessage: string, severityNumber: number) {
-		// add some stupid logic for giving hints warnings and shit
+	async function _diagnostics(
+		regEx: RegExpExecArray,
+		diagnosticsMessage: string,
+		severity: vs.DiagnosticSeverity,
+		type: string) {
 		
 		let diagnostic: vs.Diagnostic = {
-			severity: vs.DiagnosticSeverity.Warning,
+			severity: severity,
 			message: diagnosticsMessage,
 			range: {
 				start: textDocument.positionAt(regEx.index),
 				end: textDocument.positionAt(regEx.index + regEx[0].length),
 			},
-			code: 0,
+			code: type,
 			source: 'web accessibility'
 		};
 
