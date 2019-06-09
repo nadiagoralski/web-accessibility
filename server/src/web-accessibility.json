@@ -21,6 +21,47 @@
 					}
 				}
 			]
+		},
+		{
+			"type": "Buttonify",
+			"identifier": [
+				"<span(?:.|)+?>"
+			],
+			"severity": 3,
+			"message": "A <span> is used as a button, change it to a button element [<button>]",
+			"filters": [
+				{
+					"identifier": "<span(?:.+?)(?:button|btn)(?:.+?)>",
+					"options": {
+						"contains": true,
+						"negative": false,
+						"replace": false
+					}
+				}
+			]
+		},
+		{
+			"type": "Description",
+			"identifier": [
+				"<a(?:.)+?>(?:(?:\\s|\\S)+?(?=<\/a>))<\/a>"
+			],
+			"severity": 3,
+			"message": "Provide a descriptive text in between the tags",
+			"filters": [
+				{
+					"identifier": "<(?:\\s|\\S)+?>",
+					"options": {
+						"contains": false,
+						"negative": false,
+						"replace": true,
+						"replaceOptions": {
+							"newValue": "''",
+							"regexFlag": "ig"
+						}
+
+					}
+				}
+			]
 		}
 	]
 }

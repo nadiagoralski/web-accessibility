@@ -85,6 +85,20 @@ export interface Option {
      * TODO: more replace options.
 	 */
 	replace?: boolean;
+	/**
+	 * Replace Options are set when the option
+	 * for replace has been set to true
+	 */
+	replaceOptions?: ReplaceOptions;
+}
+/**
+ * Options defines which types of modifiers
+ * are possible to use with the Replace function 
+ * within the `regex` context
+ */
+export interface ReplaceOptions {
+	newValue: String;
+	regexFlag: String;
 }
 /**
  * Types are short explanations for what type of 

@@ -5,6 +5,7 @@
 import { Rule } from './types';
 import * as vs from 'vscode-languageserver';
 import * as wa from './web-accessibility.json';
+import { stringify } from 'querystring';
 
 let connection = vs.createConnection(vs.ProposedFeatures.all);
 let documents: vs.TextDocuments = new vs.TextDocuments();
@@ -86,78 +87,102 @@ documents.onDidChangeContent(change => {
 
 // Only this part is interesting.
 async function validateTextDocument(textDocument: vs.TextDocument): Promise<void> {
-	const settings = await getDocumentSettings(textDocument.uri);
 	const diagnostics: vs.Diagnostic[] = [];
-	const text = textDocument.getText();
 	const rules: Rule[] = wa.rules;
-	let m: RegExpExecArray | null;
 	let problems = 0;
-	
+	let m: RegExpExecArray | null;
 
-	rules.forEach(rule => {
-		const pattern: RegExp = new RegExp(rule.identifier.join('|'), 'ig');
-		let severity: vs.DiagnosticSeverity;
+	try {	
+		const settings = await getDocumentSettings(textDocument.uri);
+		const text: string = textDocument.getText();
 
-		switch (rule.severity) {
-			case 1:
-				severity = vs.DiagnosticSeverity.Error;
-				break;
-			case 2:
-				severity = vs.DiagnosticSeverity.Warning;
-				break;
-			case 3:
-				severity = vs.DiagnosticSeverity.Information;
-				break;
-			case 4:
-				severity = vs.DiagnosticSeverity.Hint;
-				break;
-		}
+		rules.forEach(rule => {
+			const pattern: RegExp = new RegExp(rule.identifier.join('|'), 'ig');
+			let severity: vs.DiagnosticSeverity;
 
-		while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-			const lastFilter = rule.filters.length - 1;
-			let test: RegExpExecArray; 
-			rule.filters.forEach((filter, index) => {
-				const filterPattern: RegExp = new RegExp(filter.identifier, 'i');
-				if (filter.options.contains) {
-					if (filterPattern.test(m[0])) {
-						test = m;
-					}
-				}
-				if (filter.options.negative) {
-					if (!filterPattern.test(m[0])) {
-						test = m;
-					}
-				}
-				if (filter.options.replace) {
-					connection.console.log('true rep');
-				}
+			switch (rule.severity) {
+				case 1:
+					severity = vs.DiagnosticSeverity.Error;
+					break;
+				case 2:
+					severity = vs.DiagnosticSeverity.Warning;
+					break;
+				case 3:
+					severity = vs.DiagnosticSeverity.Information;
+					break;
+				case 4:
+					severity = vs.DiagnosticSeverity.Hint;
+					break;
+			}
 
-				if (index == lastFilter) {
-					_diagnostics(test, rule.message, severity, rule.type);
-				}
-			});
-		}
-	});
+			while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
+				if (m != null || m[0] != '') {
+					const lastFilter = rule.filters.length - 1;
+					let result: RegExpExecArray;
 
-	async function _diagnostics(
-		regEx: RegExpExecArray,
-		diagnosticsMessage: string,
-		severity: vs.DiagnosticSeverity,
-		type: string) {
+					rule.filters.forEach((filter, index) => {
+						const filterPattern: RegExp = new RegExp(filter.identifier, 'i');
+
+						if (filter.options.contains) {
+							if (filterPattern.test(m[0])) {
+								result = m;
+							}
+						}
+						if (filter.options.negative) {
+							if (!filterPattern.test(m[0])) {
+								result = m;
+							}
+						}
+						if (filter.options.replace) {
+							let aRegEx: RegExpExecArray;
+							let oldRegEx: RegExpExecArray = m;
+							const newValue = filter.options.replaceOptions.newValue;
+							const regexFlag = filter.options.replaceOptions.regexFlag;						
+							let filteredString = m[0].replace(`/${filter.identifier}/${regexFlag}`, "");
+							if (!/(?:\\S+?)/ig.test(filteredString)) {
+								connection.console.log('true');
+								aRegEx = /<a(?:.)+?>/i.exec(oldRegEx[0]);
+								aRegEx.index = oldRegEx.index;
+								result = aRegEx;
+								connection.console.log(`/${filter.identifier}/${regexFlag} , ${newValue}`);
+							}
+						}
 		
-		let diagnostic: vs.Diagnostic = {
-			severity: severity,
-			message: diagnosticsMessage,
-			range: {
-				start: textDocument.positionAt(regEx.index),
-				end: textDocument.positionAt(regEx.index + regEx[0].length),
-			},
-			code: type,
-			source: 'web accessibility'
-		};
+						if (index == lastFilter) {
+							_diagnostics(result, rule.message, severity, rule.type);
+						}
+					});
+				}
+			}
+		});
 
-		diagnostics.push(diagnostic);
+		async function _diagnostics(
+			regEx: RegExpExecArray,
+			diagnosticsMessage: string,
+			severity: vs.DiagnosticSeverity,
+			type: string) {
+			
+			try {
+				let diagnostic: vs.Diagnostic = {
+					severity: severity,
+					message: diagnosticsMessage,
+					range: {
+						start: textDocument.positionAt(regEx.index),
+						end: textDocument.positionAt(regEx.index + regEx[0].length),
+					},
+					code: type,
+					source: 'web accessibility'
+				};
+		
+				diagnostics.push(diagnostic);		
+			} catch (error) {
+				connection.console.log(stringify(error));
+			}
+		}
+	} catch (error) {
+		connection.console.log(stringify(error));
 	}
+
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
