@@ -5,7 +5,6 @@
 import { Rule } from './types';
 import * as vs from 'vscode-languageserver';
 import * as wa from './web-accessibility.json';
-import { stringify } from 'querystring';
 
 let connection = vs.createConnection(vs.ProposedFeatures.all);
 let documents: vs.TextDocuments = new vs.TextDocuments();
@@ -176,11 +175,11 @@ async function validateTextDocument(textDocument: vs.TextDocument): Promise<void
 		
 				diagnostics.push(diagnostic);		
 			} catch (error) {
-				connection.console.log(stringify(error));
+				connection.console.log(error.toString());
 			}
 		}
 	} catch (error) {
-		connection.console.log(stringify(error));
+		connection.console.log(error.toString());
 	}
 
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
