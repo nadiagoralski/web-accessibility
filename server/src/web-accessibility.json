@@ -6,8 +6,8 @@
 		{
 			"type": "Semantic",
 			"identifier": [
-				"<div(?:.|)+?>",
-				"<span(?:.|)+?>"
+				["<div(?:[^A-Z]|\\s)+?>", "<span(?:[^A-Z]|\\s)+?>"],
+				""
 			],
 			"severity": 3,
 			"message": "Use Semantic HTML5 or specify a WAI-ARIA role [role=\"\"]",
@@ -24,9 +24,7 @@
 		},
 		{
 			"type": "Buttonify",
-			"identifier": [
-				"<span(?:.|)+?>"
-			],
+			"identifier": ["<span(?:.|)+?>", ""],
 			"severity": 3,
 			"message": "A <span> is used as a button, change it to a button element [<button>]",
 			"filters": [
@@ -42,9 +40,7 @@
 		},
 		{
 			"type": "Description",
-			"identifier": [
-				"<a(?:.)+?>(?:(?:\\s|\\S)+?(?=<\/a>))<\/a>"
-			],
+			"identifier": ["<a(?:.)+?>(?:(?:\\s|\\S)+?(?=</a>))</a>", ""],
 			"severity": 3,
 			"message": "Provide a descriptive text in between the tags",
 			"filters": [
@@ -58,7 +54,6 @@
 							"newValue": "''",
 							"regexFlag": "ig"
 						}
-
 					}
 				}
 			]

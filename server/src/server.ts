@@ -1,6 +1,6 @@
 /*! server.ts
-* Flamingos are pretty badass!
-* Copyright (c) 2019 Max van der Schee; Licensed MIT */
+ * Flamingos are pretty badass!
+ * Copyright (c) 2019 Max van der Schee; Licensed MIT */
 
 import { Rule } from './types';
 import * as vs from 'vscode-languageserver';
@@ -14,13 +14,17 @@ let hasWorkspaceFolderCapability: boolean = false;
 connection.onInitialize((params: vs.InitializeParams) => {
 	let capabilities = params.capabilities;
 
-	hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
-	hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
+	hasConfigurationCapability = !!(
+		capabilities.workspace && !!capabilities.workspace.configuration
+	);
+	hasWorkspaceFolderCapability = !!(
+		capabilities.workspace && !!capabilities.workspace.workspaceFolders
+	);
 
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
-		}
+		},
 	};
 });
 
@@ -32,7 +36,7 @@ connection.onInitialized(() => {
 		);
 	}
 	if (hasWorkspaceFolderCapability) {
-		connection.workspace.onDidChangeWorkspaceFolders(_event => {
+		connection.workspace.onDidChangeWorkspaceFolders((_event) => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
@@ -43,11 +47,14 @@ interface ServerSettings {
 	semanticExclude: boolean;
 }
 
-const defaultSettings: ServerSettings = { maxNumberOfProblems: 100, semanticExclude: false };
+const defaultSettings: ServerSettings = {
+	maxNumberOfProblems: 100,
+	semanticExclude: false,
+};
 let globalSettings: ServerSettings = defaultSettings;
 let documentSettings: Map<string, Thenable<ServerSettings>> = new Map();
 
-connection.onDidChangeConfiguration(change => {
+connection.onDidChangeConfiguration((change) => {
 	if (hasConfigurationCapability) {
 		documentSettings.clear();
 	} else {
@@ -67,35 +74,36 @@ function getDocumentSettings(resource: string): Thenable<ServerSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'webAccessibility'
+			section: 'webAccessibility',
 		});
 		documentSettings.set(resource, result);
 	}
 	return result;
 }
 
-documents.onDidClose(e => {
+documents.onDidClose((e) => {
 	documentSettings.delete(e.document.uri);
 	connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 
-
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent((change) => {
 	validateTextDocument(change.document);
 });
 
 // Only this part is interesting.
-async function validateTextDocument(textDocument: vs.TextDocument): Promise<void> {
+async function validateTextDocument(
+	textDocument: vs.TextDocument
+): Promise<void> {
 	const diagnostics: vs.Diagnostic[] = [];
 	const rules: Rule[] = wa.rules;
 	let problems = 0;
 	let m: RegExpExecArray | null;
 
-	try {	
+	try {
 		const settings = await getDocumentSettings(textDocument.uri);
 		const text: string = textDocument.getText();
 
-		rules.forEach(rule => {
+		rules.forEach((rule) => {
 			const pattern: RegExp = new RegExp(rule.identifier.join('|'), 'ig');
 			let severity: vs.DiagnosticSeverity;
 
@@ -114,13 +122,19 @@ async function validateTextDocument(textDocument: vs.TextDocument): Promise<void
 					break;
 			}
 
-			while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
+			while (
+				(m = pattern.exec(text)) &&
+				problems < settings.maxNumberOfProblems
+			) {
 				if (m != null || m[0] != '') {
 					const lastFilter = rule.filters.length - 1;
 					let result: RegExpExecArray;
 
 					rule.filters.forEach((filter, index) => {
-						const filterPattern: RegExp = new RegExp(filter.identifier, 'i');
+						const filterPattern: RegExp = new RegExp(
+							filter.identifier[0],
+							filter.identifier[1]
+						);
 
 						if (filter.options.contains) {
 							if (filterPattern.test(m[0])) {
@@ -135,20 +149,32 @@ async function validateTextDocument(textDocument: vs.TextDocument): Promise<void
 						if (filter.options.replace) {
 							let aRegEx: RegExpExecArray;
 							let oldRegEx: RegExpExecArray = m;
-							const newValue = filter.options.replaceOptions.newValue;
-							const regexFlag = filter.options.replaceOptions.regexFlag;						
-							let filteredString = m[0].replace(`/${filter.identifier}/${regexFlag}`, "");
-							if (!/(?:\\S+?)/ig.test(filteredString)) {
+							const newValue =
+								filter.options.replaceOptions.newValue;
+							const regexFlag =
+								filter.options.replaceOptions.regexFlag;
+							let filteredString = m[0].replace(
+								`/${filter.identifier}/${regexFlag}`,
+								''
+							);
+							if (!/(?:\\S+?)/gi.test(filteredString)) {
 								connection.console.log('true');
 								aRegEx = /<a(?:.)+?>/i.exec(oldRegEx[0]);
 								aRegEx.index = oldRegEx.index;
 								result = aRegEx;
-								connection.console.log(`/${filter.identifier}/${regexFlag} , ${newValue}`);
+								connection.console.log(
+									`/${filter.identifier}/${regexFlag} , ${newValue}`
+								);
 							}
 						}
-		
+
 						if (index == lastFilter) {
-							_diagnostics(result, rule.message, severity, rule.type);
+							_diagnostics(
+								result,
+								rule.message,
+								severity,
+								rule.type
+							);
 						}
 					});
 				}
@@ -159,21 +185,23 @@ async function validateTextDocument(textDocument: vs.TextDocument): Promise<void
 			regEx: RegExpExecArray,
 			diagnosticsMessage: string,
 			severity: vs.DiagnosticSeverity,
-			type: string) {
-			
+			type: string
+		) {
 			try {
 				let diagnostic: vs.Diagnostic = {
 					severity: severity,
 					message: diagnosticsMessage,
 					range: {
 						start: textDocument.positionAt(regEx.index),
-						end: textDocument.positionAt(regEx.index + regEx[0].length),
+						end: textDocument.positionAt(
+							regEx.index + regEx[0].length
+						),
 					},
 					code: type,
-					source: 'web accessibility'
+					source: 'web accessibility',
 				};
-		
-				diagnostics.push(diagnostic);		
+
+				diagnostics.push(diagnostic);
 			} catch (error) {
 				connection.console.log(error.toString());
 			}
