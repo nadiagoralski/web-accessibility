@@ -35,11 +35,12 @@ connection.onInitialized(() => {
 });
 
 interface ServerSettings {
+	accessibilityLevel: string;
 	maxNumberOfProblems: number;
 	semanticExclude: boolean;
 }
 
-const defaultSettings: ServerSettings = { maxNumberOfProblems: 100, semanticExclude: false };
+const defaultSettings: ServerSettings = { accessibilityLevel: "AA", maxNumberOfProblems: 100, semanticExclude: false };
 let globalSettings: ServerSettings = defaultSettings;
 let documentSettings: Map<string, Thenable<ServerSettings>> = new Map();
 
@@ -180,6 +181,17 @@ async function validateTextDocument(textDocument: server.TextDocument): Promise<
 					if (resultFrame) {
 						problems++;
 						_diagnostics(resultFrame.meta, resultFrame.mess, resultFrame.severity);
+					}
+					break;
+				// CSS
+				case /(?!\s)([^}])*(?![\.\#\s\,\>])[^}]*}/g.test(m[0]):
+					// check for background, color, and font-size properties
+					if (/background:/im.test(m[0]) && /color:/im.test(m[0]) && /font-size:(\s)?([0-9])+(px|pt);/i.test(m[0])) {
+						let resultCss = await pattern.validateBody(m, settings.accessibilityLevel);
+						if (resultCss) {
+							problems++;
+							_diagnostics(resultCss.meta, resultCss.mess, resultCss.severity);
+						}
 					}
 					break;
 				default:

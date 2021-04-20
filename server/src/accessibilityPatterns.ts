@@ -9,6 +9,9 @@
 // connection is used for debuging > connection.console.log();
 // let connection = createConnection(ProposedFeatures.all);
 
+import * as colorAccessibility from './accessible-colors/accessibility';
+import * as colorPattern from './accessible-colors/accessibilityColorPatterns';
+
 // Order based om most common types first
 const patterns: string[] = [
 	'<div(>|)(?:.)+?>',
@@ -21,6 +24,7 @@ const patterns: string[] = [
 	'<html(>|)(?:.)+?>',
 	'tabindex="(?:.)+?"',
 	'<(?:i|)frame (?:.|)+?>',
+	'(([a-z0-9\\[\\]=:]+\\s?)|((div|span)?(#|\\.){1}[a-z0-9\\-_\\s?:]+\\s?)+)(\\{[\\s\\S][^}]*})',
 ];
 export const pattern: RegExp = new RegExp(patterns.join('|'), 'ig');
 
@@ -51,6 +55,17 @@ const badAltStarts: string[] = [
 	'alt="a graphic of',
 ];
 const badAltStartsTogether = new RegExp(badAltStarts.join('|'), 'i');
+
+const cssPropPattern = {
+	background: 'background:(\\w|\\d|\\s)*#([0-9a-f]{3}){1,2}(\\w|\\d|\\s)*;',
+	color: 'color:(\\s)?#([0-9a-f]{3}){1,2};',
+	fontSize: 'font-size:(\\s)?([0-9])+(px|pt);',
+};
+const cssPropRegEx = {
+	background: new RegExp(cssPropPattern.background, 'i'),
+	color: new RegExp(cssPropPattern.color, 'i'),
+	fontSize: new RegExp(cssPropPattern.fontSize, 'i'),
+};
 
 export async function validateDiv(m: RegExpExecArray) {
 	if (!/role=(?:.*?[a-z].*?)"/i.test(m[0])) {
@@ -263,6 +278,61 @@ export async function validateFrame(m: RegExpExecArray) {
 	}
 }
 
+export async function validateBody(m: RegExpExecArray, accessibilityLevel: string) {
+	const isFontBold = /font-weight:(\s)?(bold);/i.test(m[0]);
+
+	if (cssPropRegEx.background.test(m[0]) && cssPropRegEx.color.test(m[0])) {
+		const backgroundColorProp = cssPropRegEx.background.exec(m[0])[0];
+		const colorProp = cssPropRegEx.color.exec(m[0])[0];
+		const fontSizeProp = cssPropRegEx.fontSize.exec(m[0])[0];
+
+		// get values
+		const backgroundColorValue = backgroundColorProp.match(/#([0-9a-f]{3}){1,2}/i)[0];
+		const colorValue = colorProp.match(/#([0-9a-f]{3}){1,2}/i)[0];
+		const fontSizeValue = fontSizeProp.match(/([0-9])+/)[1] || 18;
+		const fontSizeUnit = fontSizeProp.match(/(pt|px)/) || 'px';
+		// NOTE: accessible-colors only supports pt & px font units
+
+		// get accessible contrast for font size, unit, and weight
+		// calculate contrast using background color and text color
+		const accessibleContrastRatio =
+			colorAccessibility.accessibleContrast(accessibilityLevel, fontSizeValue, fontSizeUnit, isFontBold);
+		const contrast = await colorPattern.contrast(backgroundColorValue, colorValue);
+
+		if (contrast < accessibleContrastRatio) {
+			// contrast less than accessible contrast ratio
+			// determine new background and/or text colors recommendation(s)
+			const newBackgroundColor =
+				colorPattern.findClosestAccessibleColor(backgroundColorValue, colorValue, accessibleContrastRatio);
+			const newTextColor =
+				colorPattern.findClosestAccessibleColor(colorValue, backgroundColorValue, accessibleContrastRatio);
+
+			if (newBackgroundColor || newTextColor) {
+				// recommendation found
+				let msg = `Fails SC 1.4.3: Contrast (Minimum)\n` +
+				`Level: ${accessibilityLevel}.\n` +
+				`Required contrast ratio: ${accessibleContrastRatio} Current contrast ratio: ${contrast}\n` +
+				`To meet the minimum contrast ratio of ${accessibleContrastRatio}:\n`;
+
+
+				if (newBackgroundColor) {
+					// background color recommendation
+					msg += `Change the background color to "${newBackgroundColor}"\n`;
+				}
+				if (newTextColor) {
+					// text color recommendation
+					msg += `Change the text color to "${newTextColor}"\n`;
+				}
+
+				return {
+					meta: m,
+					mess: msg,
+					severity: 2,
+				};
+			}
+		}
+	}
+}
 // export async function validateId(m: RegExpExecArray) {
 // 	let connection = createConnection(ProposedFeatures.all);
 // 	let idValue = /id="(.*?[a-z].*?)"/i.exec(m[0])[1];

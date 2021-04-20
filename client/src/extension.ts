@@ -37,6 +37,7 @@ export function activate(context: ExtensionContext) {
 			{ language: 'vue-html', scheme: 'file' },
 			{ language: 'vue', scheme: 'file' },
 			{ language: 'handlebars', scheme: 'file' },
+			{ language: 'css', scheme: 'file' },
 		],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
